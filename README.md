@@ -11,7 +11,7 @@
 
 This file implements the BVG_TS class. Key functions:
 
-- **`set_lr(global_lr, n_update)`**: Adjusts learning rates of tensors based on their bias-variance ratios.
+- **`set_lr(global_lr, update_ratio)`**: Adjusts learning rates of tensors based on their bias-variance ratios.
 - **`_cal_bvr()`**: Calculates the bias-variance ratio for each tensor (used internally within `set_lr` and not intended for standalone use).
 
 #### How to Use BVG_TS

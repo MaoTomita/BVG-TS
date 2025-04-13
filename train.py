@@ -103,7 +103,7 @@ def train(model, train_loader, test_loader, param_groups, device, epochs=50, bat
             loss.backward()
 
             # Update learning rates using BVG_TS
-            bvr, update_layer_idx = bvg_ts.set_lr(global_lr=lr, n_update=1)
+            bvr, update_layer_idx = bvg_ts.set_lr(global_lr=lr, update_ratio=0.5)
             
             # Update parameters
             optimizer.step()
@@ -160,7 +160,7 @@ def main():
     parser.add_argument("--network", type=str, choices=["wrn_50_2", "vit_small"], required=True, help="network")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--use_wandb", action="store_true", help="Use Weights & Biases for logging")
     args = parser.parse_args()
 

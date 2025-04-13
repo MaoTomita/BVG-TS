@@ -1,47 +1,43 @@
-# BVG-LS: Bias-Variance Guided Layer Selection
-
-## Links
-- [Paper: "A Simple Finetuning Strategy Based on Bias-Variance Ratios of Layer-Wise Gradients"](https://openaccess.thecvf.com/content/ACCV2024/papers/Tomita_A_Simple_Finetuning_Strategy_Based_on_Bias-Variance_Ratios_of_Layer-Wise_ACCV_2024_paper.pdf)
-- [Project Page](http://www.vip.sc.e.titech.ac.jp/proj/BVGLS/)
+# BVG-TS: Bias-Variance Guided Tensor Selection
 
 ## Repository Structure
 
-- **`BVG_LS.py`**: Core implementation of the BVG_LS class.
-- **`train.py`**: Sample training script demonstrating the use of BVG_LS with models and datasets.
+- **`BVG_TS.py`**: Core implementation of the BVG_TS class.
+- **`train.py`**: Sample training script demonstrating the use of BVG_TS with models and datasets.
 
 ## File Descriptions
 
-### BVG_LS.py
+### BVG_TS.py
 
-This file implements the BVG_LS class. Key functions:
+This file implements the BVG_TS class. Key functions:
 
-- **`set_lr(global_lr, n_update)`**: Adjusts learning rates of layers based on their bias-variance ratios.
-- **`_cal_bvr()`**: Calculates the bias-variance ratio for each layer (used internally within `set_lr` and not intended for standalone use).
+- **`set_lr(global_lr, n_update)`**: Adjusts learning rates of tensors based on their bias-variance ratios.
+- **`_cal_bvr()`**: Calculates the bias-variance ratio for each tensor (used internally within `set_lr` and not intended for standalone use).
 
-#### How to Use BVG_LS
+#### How to Use BVG_TS
 
-1. **Prepare an Optimizer with Layer-wise Parameter Groups:**
-   Split your model's parameters into groups corresponding to different layers or modules.
+1. **Prepare an Optimizer with tensor-wise Parameter Groups:**
+   Split your model's parameters into groups corresponding to different tensors.
 
    ```python
    # Example for WideResNet-50-2
-   layers = [
-       nn.Sequential(model.conv1, model.bn1),
-       model.layer1, model.layer2, model.layer3, model.layer4, model.fc
-   ]
-   param_groups = [{'params': layer.parameters()} for layer in layers]
-   optimizer = torch.optim.SGD(param_groups, lr=0.01, momentum=0.9)
+   model = models.wide_resnet50_2(weights='DEFAULT')
+   model.fc = nn.Linear(model.fc.in_features, num_classes)
+   
+   param_groups = [{'params': [param]} for name, param in model.named_parameters()]
+   
+   optimizer = torch.optim.SGD(param_groups, lr=0.001, momentum=0.9)
    ```
 
-2. **Initialize a BVG_LS Instance:**
-   Pass the optimizer to the BVG_LS constructor.
+2. **Initialize a BVG_TS Instance:**
+   Pass the optimizer to the BVG_TS constructor.
 
    ```python
-   bvg_ls = BVG_LS(optimizer)
+   bvg_ts = BVG_TS(optimizer)
    ```
 
 3. **Update Learning Rates During Training:**
-   Inside your training loop, use BVG_LS to adjust the learning rates of layers dynamically.
+   Inside your training loop, use BVG_TS to adjust the learning rates of tensors dynamically.
 
    ```python
    for inputs, targets in train_loader:
@@ -57,8 +53,8 @@ This file implements the BVG_LS class. Key functions:
        # Backward pass
        loss.backward()
 
-       # Adjust learning rates using BVG_LS
-       bvg_ls.set_lr(global_lr=0.01, n_update=1)
+       # Adjust learning rates using BVG_TS
+       bvg_ts.set_lr(global_lr=0.001, update_rate=0.5)
 
        # Update parameters
        optimizer.step()
@@ -70,7 +66,7 @@ A sample script that demonstrates:
 
 - Dataset loading and preprocessing.
 - Model preparation for WideResNet-50-2 and Vision Transformers.
-- Finetuning using BVG_LS.
+- Finetuning using BVG_TS.
 
 Supported dataset (`--dataset`):
 

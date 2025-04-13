@@ -16,7 +16,7 @@ This file implements the BVG_TS class. Key functions:
 
 #### How to Use BVG_TS
 
-1. **Prepare an Optimizer with tensor-wise Parameter Groups:**
+1. **Prepare an Optimizer with Tensor-wise Parameter Groups:**
    Split your model's parameters into groups corresponding to different tensors.
 
    ```python

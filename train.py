@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import argparse
 import wandb
 import timm
-from BVG_LS import BVG_LS 
+from BVG_TS import BVG_TS 
 
 # Prepare dataset and DataLoader
 # This function creates training and test loaders for the specified dataset.
@@ -55,35 +55,25 @@ def prepare_model(network, num_classes):
         # Modify the fully connected layer for the specific number of classes
         model.fc = nn.Linear(model.fc.in_features, num_classes)
         
-        # Group layers for parameter optimization
-        layers = [
-            nn.Sequential(model.conv1, model.bn1),
-            model.layer1, model.layer2, model.layer3, model.layer4, model.fc
-        ]
-        param_groups = [{'params': layer.parameters()} for layer in layers]
-        
     elif network == "vit_small":
         model = timm.create_model('vit_small_patch16_224.augreg_in1k', pretrained=True, num_classes=num_classes)
-        param_groups = [
-            {'params': [model.cls_token, model.pos_embed] + list(model.patch_embed.parameters())},
-            *[{'params': block.parameters()} for block in model.blocks],
-            {'params': list(model.norm.parameters()) + list(model.head.parameters())}
-        ]
 
     else:
         raise ValueError(f"Unsupported network: {network}")
 
+        param_groups = [{'params': [param]} for name, param in model.named_parameters()]
+
     return model, param_groups
 
 # Training loop function
-# Handles training the model using the BVG_LS fine-tuning strategy.
+# Handles training the model using the BVG_TS fine-tuning strategy.
 def train(model, train_loader, test_loader, param_groups, device, epochs=50, batch_size=128, lr=0.01, use_wandb=False):
 
     model = model.to(device)
     
-    # Initialize optimizer and BVG_LS
+    # Initialize optimizer and BVG_TS
     optimizer = optim.SGD(param_groups, lr=lr, momentum=0.9, dampening=0, weight_decay=5e-4, nesterov=True)
-    bvg_ls = BVG_LS(optimizer)
+    bvg_ts = BVG_TS(optimizer)
 
     criterion = nn.CrossEntropyLoss()
 
@@ -112,8 +102,8 @@ def train(model, train_loader, test_loader, param_groups, device, epochs=50, bat
             # Backward pass
             loss.backward()
 
-            # Update learning rates using BVG_LS
-            bvr, update_layer_idx = bvg_ls.set_lr(global_lr=lr, n_update=1)
+            # Update learning rates using BVG_TS
+            bvr, update_layer_idx = bvg_ts.set_lr(global_lr=lr, n_update=1)
             
             # Update parameters
             optimizer.step()
@@ -165,7 +155,7 @@ def validate(model, test_loader, criterion, device, use_wandb, epoch):
 # Main function
 def main():
 
-    parser = argparse.ArgumentParser(description="Finetuning a model with BVG_LS")
+    parser = argparse.ArgumentParser(description="Finetuning a model with BVG_TS")
     parser.add_argument("--dataset", type=str, choices=["pets", "dtd", "cifar100"], required=True, help="Target dataset")
     parser.add_argument("--network", type=str, choices=["wrn_50_2", "vit_small"], required=True, help="network")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")

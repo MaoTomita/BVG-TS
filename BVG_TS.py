@@ -1,15 +1,15 @@
 import torch
 
-class BVG_LS:
+class BVG_TS:
     """
-    Bias-Variance Guided Layer Selection (BVG_LS) class for fine-tuning neural networks.
+    Bias-Variance Guided Tensor Selection (BVG_TS) class for fine-tuning neural networks.
 
     This class dynamically adjusts the learning rate of layers based on their bias-variance ratio (BVR),
     enabling efficient fine-tuning by prioritizing updates to layers with high BVR.
     """
     def __init__(self, optimizer, alpha=0.9):
         """
-        Initialize the BVG_LS class.
+        Initialize the BVG_TS class.
 
         Args:
             optimizer (torch.optim.Optimizer): The optimizer whose parameters will be adjusted.
@@ -23,30 +23,33 @@ class BVG_LS:
         self.alpha = alpha
         self.total_iter = 0  # Total number of iterations
 
-    def set_lr(self, global_lr, n_update=1):
+    def set_lr(self, global_lr, update_ratio=0.5):
         """
-        Adjust the learning rate for each layer based on BVR.
-
+        Adjust the learning rate for each tensor based on BVR.
+        
         Args:
-            global_lr (float): Base learning rate to be applied to selected layers.
-            n_update (int): Number of layers to update based on the highest BVR.
-
+            global_lr (float): Base learning rate to be applied to selected tensors.
+            update_ratio (float): Ratio of tensors to update based on the highest BVR (default is 0.5).
+        
         Returns:
-            tuple: Bias-variance ratios (torch.Tensor) and indices of updated layers (torch.Tensor).
+            tuple: Bias-variance ratios (torch.Tensor) and indices of updated tensors (torch.Tensor).
         """
         bvr = self._cal_bvr()
-        # Identify a layer with the highest BVR
-        top_layer_idx = torch.argsort(bvr, descending=True)
-        update_layer_idx = top_layer_idx[:n_update]
-
-        # Set learning rate for each layer
+        # Calculate the number of tensors to update
+        n_update = max(1, int(self.n_layers * update_ratio))
+        
+        # Identify tensors with the highest BVR
+        top_tensor_idx = torch.argsort(bvr, descending=True)
+        update_tensor_idx = top_tensor_idx[:n_update]
+        
+        # Set learning rate for each tensor
         for i in range(self.n_layers):
-            if i in update_layer_idx:
+            if i in update_tensor_idx:
                 self.optimizer.param_groups[i]['lr'] = global_lr
             else:
                 self.optimizer.param_groups[i]['lr'] = 0
-
-        return bvr, update_layer_idx
+        
+        return bvr, update_tensor_idx
 
     def _cal_bvr(self):
         """
